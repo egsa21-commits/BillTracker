@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Bill Tracker Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#efefeb;--text:#1a1a1a;--text2:#6b6b6b;--text3:#9b9b9b;--border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.2);--shadow:0 1px 4px rgba(0,0,0,.1);--blue:#378ADD;--blue-bg:#E6F1FB;--blue-dark:#0C447C;--green:#5A9216;--green-bg:#EAF3DE;--green-dark:#27500A;--red:#E24B4A;--red-bg:#FCEBEB;--red-dark:#791F1F;--amber:#EF9F27;--amber-bg:#FAEEDA;--amber-dark:#633806;--purple:#534AB7;--purple-bg:#EEEDFE;--purple-dark:#3C3489;--gray-bg:#F1EFE8;--gray-dark:#5F5E5A;--rad-md:10px;--rad-lg:14px;--rad-xl:18px;--rad-full:9999px;--font:'Inter',system-ui,sans-serif;--tr:.15s ease}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--bg2:#212121;--bg3:#2a2a2a;--text:#f0f0f0;--text2:#a0a0a0;--text3:#666;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.18)}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:none;text-size-adjust:none;width:100%;overflow-x:hidden}
+body{font-family:var(--font);font-size:16px;line-height:1.5;color:var(--text);background:var(--bg);min-height:100vh;width:100%;max-width:100vw;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+button{font-family:var(--font);cursor:pointer}
+input,select,textarea{font-family:var(--font);font-size:16px!important}
+.shell{width:100%;max-width:860px;margin:0 auto;padding:20px 16px calc(90px + env(safe-area-inset-bottom));overflow-x:hidden}
+@media(min-width:640px){.shell{padding:28px 24px 48px}}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:20px}
+.app-title{font-size:22px;font-weight:600;display:flex;align-items:center;gap:8px}
+.app-title i{color:var(--blue);font-size:24px}
+.app-date{font-size:13px;color:var(--text2);margin-top:3px}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sync-btn{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-full);padding:8px 12px;position:relative;-webkit-tap-highlight-color:transparent;min-height:44px}
+#sync-icon{font-size:18px;transition:color var(--tr)}
+.sync-idle{color:var(--text3)}.sync-syncing{color:var(--blue);animation:spin 1s linear infinite}.sync-ok{color:var(--green)}.sync-error{color:var(--red)}
+#sync-label{font-size:12px;color:var(--text2);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:420px){#sync-label{display:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:var(--bg);border:none;border-radius:var(--rad-full);padding:12px 20px;font-size:16px;font-weight:500;white-space:nowrap;min-height:48px;-webkit-tap-highlight-color:transparent;transition:opacity var(--tr)}
+.btn-primary:hover{opacity:.85}
+.btn-sec{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border2);border-radius:var(--rad-md);padding:10px 16px;font-size:15px;color:var(--text);min-height:44px;transition:background var(--tr)}
+.btn-sec:hover{background:var(--bg2)}
+.btn-save{background:var(--text);color:var(--bg);border:none;border-radius:var(--rad-md);padding:12px 24px;font-size:16px;font-weight:500;min-height:48px;transition:opacity var(--tr)}
+.btn-save:hover{opacity:.85}
+.icon-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;background:none;border:1px solid var(--border2);border-radius:var(--rad-md);font-size:20px;color:var(--text2);-webkit-tap-highlight-color:transparent;transition:background var(--tr);flex-shrink:0}
+.icon-btn:hover{background:var(--bg2)}
+.icon-btn.ab{color:var(--blue-dark);border-color:var(--blue);background:var(--blue-bg)}
+.icon-btn.ag{color:var(--green-dark);border-color:var(--green);background:var(--green-bg)}
+.icon-btn.ar{color:var(--red-dark);border-color:var(--red)}
+.nav-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-btn{display:flex;align-items:center;gap:6px;background:none;border:none;border-bottom:2px solid transparent;padding:12px 18px;font-size:16px;color:var(--text2);white-space:nowrap;margin-bottom:-1px;min-height:48px;-webkit-tap-highlight-color:transparent;transition:color var(--tr)}
+.nav-btn.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
+.section{display:none}.section.active{display:block}
+.alert-box{border-radius:var(--rad-lg);padding:14px 16px;margin-bottom:14px;border:1px solid}
+.alert-danger{background:var(--red-bg);border-color:#F7C1C1;color:var(--red-dark)}
+.alert-warning{background:var(--amber-bg);border-color:#FAC775;color:var(--amber-dark)}
+.alert-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin-bottom:8px}
+.alert-close{margin-left:auto;background:none;border:none;color:inherit;font-size:20px;padding:4px 6px;min-width:36px;min-height:36px}
+.alert-row{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;gap:8px}
+.totals-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:var(--bg2);border-radius:var(--rad-lg);padding:16px;margin-bottom:16px;border:1px solid var(--border)}
+.t-item{text-align:center}
+.t-lbl{font-size:12px;color:var(--text2);margin-bottom:4px}
+.t-val{font-size:18px;font-weight:600;line-height:1.2}
+.t-pct{font-size:12px;color:var(--text2);margin-top:2px}
+.filter-bar{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.pill{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border2);border-radius:var(--rad-full);padding:10px 18px;font-size:15px;color:var(--text2);white-space:nowrap;min-height:44px;-webkit-tap-highlight-color:transparent;transition:all var(--tr)}
+.pill.active{background:var(--text);color:var(--bg);border-color:transparent}
+.bills-list{display:flex;flex-direction:column;gap:12px}
+.bill-card{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px 12px 16px 16px;box-shadow:var(--shadow)}
+.bill-card.s-overdue{border-left:4px solid var(--red)}.bill-card.s-soon{border-left:4px solid var(--amber)}.bill-card.s-ok{border-left:4px solid var(--green)}.bill-card.s-autopay{border-left:4px solid var(--blue)}.bill-card.s-paid{opacity:.55}.bill-card.s-cancelled{opacity:.4}
+.bill-logo{width:48px;height:48px;flex-shrink:0;border-radius:var(--rad-md);background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.svc-img{width:32px;height:32px;object-fit:contain;border-radius:6px}
+.svc-emoji{font-size:24px;line-height:1}
+.bill-info{flex:1;min-width:0}
+.bill-name-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bill-name{font-size:16px;font-weight:600}
+.plan-tag{font-size:12px;background:var(--bg2);color:var(--text2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;white-space:nowrap;flex-shrink:0}
+.bill-meta{font-size:13px;color:var(--text2);margin-top:3px}
+.bill-right{text-align:right;flex-shrink:0}
+.bill-amt{font-size:17px;font-weight:600}
+.bill-due{font-size:13px;margin-top:2px}
+.bill-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+@media(min-width:640px){.bill-actions{flex-direction:row}}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:13px;font-weight:500;padding:4px 10px;border-radius:var(--rad-full);white-space:nowrap;margin-top:5px}
+.b-overdue{background:var(--red-bg);color:var(--red-dark)}.b-soon{background:var(--amber-bg);color:var(--amber-dark)}.b-ok{background:var(--green-bg);color:var(--green-dark)}.b-paid{background:var(--bg2);color:var(--text2)}.b-autopay{background:var(--blue-bg);color:var(--blue-dark)}.b-cancelled{background:var(--gray-bg);color:var(--gray-dark)}
+.c-danger{color:var(--red-dark)}.c-warning{color:var(--amber-dark)}.c-success{color:var(--green-dark)}.c-info{color:var(--blue-dark)}.c-purple{color:var(--purple-dark)}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text2)}
+.empty-state i{font-size:40px;display:block;margin-bottom:12px}
+.empty-state p{font-size:16px}
+.hist-summary{display:flex;justify-content:space-between;font-size:14px;color:var(--text2);margin-bottom:12px}
+.hist-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rad-lg);box-shadow:var(--shadow);margin-bottom:10px}
+.hist-icon{font-size:26px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg2);border-radius:var(--rad-md);border:1px solid var(--border);overflow:hidden}
+.hist-icon .svc-img{width:28px;height:28px;object-fit:contain;border-radius:4px}
+.hist-icon .svc-emoji{font-size:22px}
+.hist-info{flex:1;min-width:0}
+.hist-name{font-size:16px;font-weight:500}
+.hist-date{font-size:13px;color:var(--text2);margin-top:2px}
+.hist-amt{font-size:16px;font-weight:600;flex-shrink:0}
+.hist-actions{display:flex;gap:6px;flex-shrink:0}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+@media(min-width:640px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px}
+.stat-label{font-size:13px;color:var(--text2);margin-bottom:5px}
+.stat-value{font-size:22px;font-weight:600;line-height:1.2}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.chart-wrap{position:relative;width:100%;height:230px;margin:14px 0}
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text2)}
+.legend-dot{width:11px;height:11px;border-radius:2px;flex-shrink:0}
+.sec-title{font-size:16px;font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.divider{border:none;border-top:1px solid var(--border);margin:22px 0}
+.ai-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad-lg);padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+.ai-card h4{font-size:15px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;color:var(--purple-dark)}
+.ai-card h4 i{color:var(--purple)}
+.ai-card p{font-size:14px;color:var(--text2);line-height:1.6}
+.ai-tip{margin-top:8px!important;color:var(--text)!important;font-weight:500}
+.ai-loading{text-align:center;padding:2rem;color:var(--text2);font-size:15px}
+.ai-loading i{font-size:32px;display:block;margin-bottom:12px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+@media(min-width:640px){.modal-overlay{align-items:center;padding:20px}}
+.modal{background:var(--bg);width:100%;max-width:480px;border-radius:var(--rad-xl) var(--rad-xl) 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));max-height:94vh;overflow-y:auto;border:1px solid var(--border);position:relative}
+.modal::before{content:"";display:block;width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px}
+@media(min-width:640px){.modal{border-radius:var(--rad-xl);padding:28px}.modal::before{display:none}}
+.modal h3{font-size:19px;font-weight:600;margin-bottom:18px}
+.fgrp{margin-bottom:16px}
+.flbl{display:block;font-size:14px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+input[type=text],input[type=number],input[type=date],select{width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:var(--rad-md);color:var(--text);background:var(--bg);outline:none;min-height:48px;-webkit-appearance:none;appearance:none;transition:border-color var(--tr)}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(55,138,221,.15)}
+select option{color:#1a1a1a;background:#fff}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--bg2);border-radius:var(--rad-md);margin-bottom:12px;font-size:16px;min-height:54px}
+.toggle-label{display:flex;align-items:center;gap:10px}
+.tgl{position:relative;width:48px;height:28px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tgl-s{position:absolute;inset:0;background:var(--border2);border-radius:var(--rad-full);cursor:pointer;transition:background .2s}
+.tgl-s::before{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;left:3px;top:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tgl input:checked+.tgl-s{background:var(--blue)}.tgl input:checked+.tgl-s::before{transform:translateX(20px)}
+.tgl.red input:checked+.tgl-s{background:var(--red)}
+.m-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+.flex-between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:var(--bg);padding:12px 20px;border-radius:var(--rad-full);font-size:14px;font-weight:500;z-index:2000;transition:transform .3s ease,opacity .3s ease;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="hdr">
+  <div>
+    <div class="app-title"><i class="ti ti-wallet"></i> Bill Tracker Pro</div>
+    <div class="app-date" id="hdr-date"></div>
+  </div>
+  <div class="hdr-right">
+    <button class="sync-btn" onclick="loadAll()" title="Sync now">
+      <i class="ti ti-cloud" id="sync-icon"></i>
+      <span id="sync-label">Loading…</span>
+    </button>
+    <button class="btn-primary" onclick="openModal(null)"><i class="ti ti-plus"></i> Add</button>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-btn active" onclick="goTab('bills',this)"><i class="ti ti-list"></i> Bills</button>
+  <button class="nav-btn" onclick="goTab('history',this)"><i class="ti ti-history"></i> History</button>
+  <button class="nav-btn" onclick="goTab('insights',this)"><i class="ti ti-chart-pie"></i> Insights</button>
+</nav>
+
+<!-- BILLS -->
+<div id="tab-bills" class="section active">
+  <div id="alerts"></div>
+  <div class="totals-bar">
+    <div class="t-item"><div class="t-lbl">Total monthly</div><div class="t-val" id="tot-monthly">—</div><div class="t-pct" id="tot-annual"></div></div>
+    <div class="t-item"><div class="t-lbl">Already paid</div><div class="t-val c-success" id="tot-paid">—</div><div class="t-pct" id="tot-paid-pct"></div></div>
+    <div class="t-item"><div class="t-lbl">Still pending</div><div class="t-val c-warning" id="tot-pending">—</div><div class="t-pct" id="tot-pending-pct"></div></div>
+  </div>
+  <div class="filter-bar">
+    <button class="pill active" onclick="setFilter('all',this)">All</button>
+    <button class="pill" onclick="setFilter('overdue',this)">Overdue</button>
+    <button class="pill" onclick="setFilter('soon',this)">Due soon</button>
+    <button class="pill" onclick="setFilter('autopay',this)"><i class="ti ti-bolt" style="font-size:14px"></i> Autopay</button>
+    <button class="pill" onclick="setFilter('paid',this)">Paid</button>
+    <button class="pill" onclick="setFilter('cancelled',this)">Cancelled</button>
+  </div>
+  <div class="bills-list" id="bills-list"></div>
+</div>
+
+<!-- HISTORY -->
+<div id="tab-history" class="section">
+  <div class="flex-between" style="margin-bottom:16px">
+    <div class="sec-title"><i class="ti ti-history"></i> Payment history</div>
+    <select id="hist-filter" onchange="renderHistory()" style="width:auto;padding:8px 12px;min-height:44px">
+      <option value="all">All time</option>
+      <option value="thismonth">This month</option>
+      <option value="lastmonth">Last month</option>
+    </select>
+  </div>
+  <div id="history-list"></div>
+</div>
+
+<!-- INSIGHTS -->
+<div id="tab-insights" class="section">
+  <div class="stat-grid" id="ins-stats"></div>
+  <hr class="divider"/>
+  <div class="sec-title"><i class="ti ti-chart-donut"></i> Spending by category</div>
+  <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+  <div class="chart-legend" id="chart-legend"></div>
+  <hr class="divider"/>
+  <div class="sec-title"><i class="ti ti-sparkles" style="color:var(--purple)"></i> AI insights</div>
+  <div id="ai-insights"><div class="ai-loading"><i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Analyzing…</div></div>
+  <button onclick="loadAI()" class="btn-sec" style="margin-top:14px"><i class="ti ti-refresh"></i> Refresh</button>
+</div>
+
+</div><!-- /shell -->
+
+<!-- MODAL: ADD/EDIT BILL -->
+<div class="modal-overlay" id="bill-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add bill</h3>
+    <div class="fgrp"><label class="flbl">Service name *</label><input type="text" id="f-name" placeholder="e.g. Netflix, Electricity…" autocomplete="off"/></div>
+    <div class="frow">
+      <div class="fgrp"><label class="flbl">Amount ($) *</label><input type="number" id="f-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+      <div class="fgrp"><label class="flbl">Due date *</label><input type="date" id="f-due"/></div>
+    </div>
+    <div class="frow">
+      <div class="fgrp"><label class="flbl">Category</label>
+        <select id="f-cat">
+          <option value="streaming">Streaming</option><option value="utilities">Utilities</option>
+          <option value="rent">Rent/Mortgage</option><option value="insurance">Insurance</option>
+          <option value="internet">Internet/Phone</option><option value="auto">Auto</option>
+          <option value="subscriptions">Subscriptions</option><option value="credit">Credit/Loans</option>
+          <option value="storage">Cloud Storage</option><option value="carwash">Car Wash</option>
+          <option value="ai">AI Services</option><option value="other" selected>Other</option>
+        </select>
+      </div>
+      <div class="fgrp"><label class="flbl">Billing cycle</label>
+        <select id="f-rec">
+          <option value="monthly" selected>Monthly</option><option value="biweekly">Biweekly</option>
+          <option value="weekly">Weekly</option><option value="annual">Annual</option><option value="once">One-time</option>
+        </select>
+      </div>
+    </div>
+    <div class="fgrp"><label class="flbl">Plan name <span style="font-weight:400">(optional)</span></label><input type="text" id="f-plan" placeholder="e.g. Standard with Ads, Basic…" autocomplete="off"/></div>
+    <div class="toggle-row"><span class="toggle-label"><i class="ti ti-bolt" style="color:var(--blue);font-size:20px"></i> Autopay enabled</span><label class="tgl"><input type="checkbox" id="f-autopay"><span class="tgl-s"></span></label></div>
+    <div class="toggle-row"><span class="toggle-label"><i class="ti ti-ban" style="color:var(--red);font-size:20px"></i> Subscription cancelled</span><label class="tgl red"><input type="checkbox" id="f-cancelled"><span class="tgl-s"></span></label></div>
+    <div class="m-actions"><button class="btn-sec" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveBillForm()">Save</button></div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT HISTORY DATE -->
+<div class="modal-overlay" id="hist-modal">
+  <div class="modal" style="max-width:360px">
+    <h3>Edit payment date</h3>
+    <div class="fgrp"><label class="flbl">Payment date</label><input type="date" id="hm-date"/></div>
+    <div class="m-actions"><button class="btn-sec" onclick="closeHistModal()">Cancel</button><button class="btn-save" onclick="saveHistDate()">Save</button></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ⚠️  CONFIGURACIÓN — REEMPLAZA ESTOS DOS VALORES
+//  con los datos de tu proyecto en Supabase → Settings → API Keys
+// ══════════════════════════════════════════════════════════════
+const SUPABASE_URL  = "https://dsycborvycwciamjszmt.supabase.co";
+const SUPABASE_KEY  = "sb_publishable_4ArnSKTVJCBmH8hK66QFCw_cmRqRw-f"; // sb_publishable_4Arn...
+// ══════════════════════════════════════════════════════════════
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── ESTADO ───────────────────────────────────────────────────
+const S = { bills:[], history:[], filter:"all", editId:null, editHistId:null, chart:null };
+
+// ── CONSTANTES ───────────────────────────────────────────────
+const SVC_MAP={
+  netflix:{d:"netflix.com",e:"🎬"},avista:{d:"myavista.com",e:"⚡"},
+  hbo:{d:"hbomax.com",e:"🎭"},"amazon prime":{d:"amazon.com",e:"📦"},
+  "prime video":{d:"primevideo.com",e:"🎬"},"amazon music":{d:"music.amazon.com",e:"🎵"},
+  mister:{d:"mistercarwash.com",e:"🚗"},disney:{d:"disneyplus.com",e:"🏰"},
+  hulu:{d:"hulu.com",e:"📺"},progressive:{d:"progressive.com",e:"🛡️"},
+  "t-mobile":{d:"t-mobile.com",e:"📱"},tmobile:{d:"t-mobile.com",e:"📱"},
+  toyota:{d:"toyota.com",e:"🚙"},chatgpt:{d:"chat.openai.com",e:"🤖"},
+  openai:{d:"openai.com",e:"🤖"},"google one":{d:"one.google.com",e:"☁️"},
+  google:{d:"google.com",e:"🔍"},xfinity:{d:"xfinity.com",e:"📡"},
+  comcast:{d:"comcast.com",e:"📡"},"bank of america":{d:"bankofamerica.com",e:"💳"},
+  affirm:{d:"affirm.com",e:"💳"},spotify:{d:"spotify.com",e:"🎵"},
+  apple:{d:"apple.com",e:"🍎"},microsoft:{d:"microsoft.com",e:"🪟"},
+  youtube:{d:"youtube.com",e:"▶️"},dropbox:{d:"dropbox.com",e:"📦"},
+  adobe:{d:"adobe.com",e:"🎨"},zoom:{d:"zoom.us",e:"📹"},
+  streaming:{d:null,e:"🎬"},utilities:{d:null,e:"⚡"},rent:{d:null,e:"🏠"},
+  renta:{d:null,e:"🏠"},insurance:{d:null,e:"🛡️"},internet:{d:null,e:"📡"},
+  auto:{d:null,e:"🚙"},subscriptions:{d:null,e:"📱"},credit:{d:null,e:"💳"},
+  storage:{d:null,e:"☁️"},carwash:{d:null,e:"🚗"},ai:{d:null,e:"🤖"},other:{d:null,e:"📄"}
+};
+const CAT_COLORS={streaming:"#534AB7",utilities:"#0F6E56",rent:"#185FA5",insurance:"#3B6D11",internet:"#854F0B",auto:"#993C1D",subscriptions:"#D4537E",credit:"#A32D2D",storage:"#1D9E75",carwash:"#BA7517",ai:"#7F77DD",other:"#888780"};
+const CAT_LABELS={streaming:"Streaming",utilities:"Utilities",rent:"Rent/Mortgage",insurance:"Insurance",internet:"Internet/Phone",auto:"Auto",subscriptions:"Subscriptions",credit:"Credit/Loans",storage:"Cloud Storage",carwash:"Car Wash",ai:"AI Services",other:"Other"};
+const REC_LABELS={monthly:"Monthly",biweekly:"Biweekly",weekly:"Weekly",annual:"Annual",once:"One-time"};
+
+// ── HELPERS ──────────────────────────────────────────────────
+function uid(){ return Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,9); }
+function getSvcInfo(b){ const n=b.name.toLowerCase(); for(const k of Object.keys(SVC_MAP)){if(n.includes(k))return SVC_MAP[k];} return SVC_MAP[b.cat]||{d:null,e:"📄"}; }
+function faviconUrl(domain){ return "https://www.google.com/s2/favicons?sz=64&domain="+domain; }
+function getIconHTML(b){ const info=getSvcInfo(b); if(info.d){ return `<img src="${faviconUrl(info.d)}" alt="${b.name}" class="svc-img" onerror="this.style.display='none';this.nextSibling.style.display='inline'" loading="lazy"/><span class="svc-emoji" style="display:none">${info.e}</span>`; } return `<span class="svc-emoji">${info.e}</span>`; }
+function getEmojiOnly(b){ return getSvcInfo(b).e; }
+function toMonthly(b){ if(b.rec==="annual")return b.amount/12; if(b.rec==="biweekly")return b.amount*2.17; if(b.rec==="weekly")return b.amount*4.33; return b.amount; }
+function daysLeft(due){ if(!due)return 999; const t=new Date(); t.setHours(0,0,0,0); const d=new Date(due+"T00:00:00"); if(isNaN(d))return 999; return Math.round((d-t)/86400000); }
+function getStatus(b){ if(b.cancelled)return"cancelled"; if(b.paid)return"paid"; if(b.autopay)return"autopay"; const d=daysLeft(b.due); if(d<0)return"overdue"; if(d<=7)return"soon"; return"ok"; }
+function fmtDate(iso){ if(!iso)return"—"; const d=new Date(iso+"T00:00:00"); if(isNaN(d))return"—"; return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function fmtNow(){ return new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"}); }
+
+// ── TOAST ────────────────────────────────────────────────────
+function showToast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2500); }
+
+// ── SYNC UI ──────────────────────────────────────────────────
+function setSyncUI(state){ 
+  const icon=document.getElementById("sync-icon"), lbl=document.getElementById("sync-label");
+  if(!icon)return;
+  const cls={idle:"sync-idle",syncing:"sync-syncing",ok:"sync-ok",error:"sync-error"};
+  icon.className="ti ti-cloud "+(cls[state]||"sync-idle");
+  if(state==="syncing") lbl.textContent="Syncing…";
+  else if(state==="ok")  lbl.textContent="Synced · "+fmtNow();
+  else if(state==="error") lbl.textContent="Error";
+  else lbl.textContent="Ready";
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SUPABASE: LECTURA Y ESCRITURA
+// ══════════════════════════════════════════════════════════════
+
+// Cargar todos los datos desde Supabase
+async function loadAll(){
+  setSyncUI("syncing");
+  try{
+    const [{ data: bills, error: e1 }, { data: history, error: e2 }] = await Promise.all([
+      db.from("bills").select("*").order("due", { ascending: true }),
+      db.from("history").select("*").order("date", { ascending: false })
+    ]);
+    if(e1) throw e1;
+    if(e2) throw e2;
+    S.bills   = bills   || [];
+    S.history = history || [];
+    renderBills();
+    renderHistory();
+    setSyncUI("ok");
+  } catch(err){
+    setSyncUI("error");
+    showToast("Error loading data: "+err.message);
+    console.error(err);
+  }
+}
+
+// Guardar o actualizar un bill en Supabase
+async function saveBillDB(bill){
+  const row = {
+    id: bill.id, name: bill.name, amount: bill.amount,
+    due: bill.due, cat: bill.cat, rec: bill.rec,
+    plan: bill.plan||"", autopay: bill.autopay,
+    cancelled: bill.cancelled, paid: bill.paid,
+    updated_at: Date.now()
+  };
+  const { error } = await db.from("bills").upsert(row, { onConflict: "id" });
+  if(error) throw error;
+}
+
+// Eliminar bill de Supabase
+async function deleteBillDB(id){
+  const { error } = await db.from("bills").delete().eq("id", id);
+  if(error) throw error;
+}
+
+// Guardar entrada en history
+async function saveHistoryDB(entry){
+  const row = {
+    id: entry.id, bill_id: entry.billId||null, name: entry.name,
+    amount: entry.amount, cat: entry.cat||"other",
+    date: entry.date, icon: entry.icon||"", updated_at: Date.now()
+  };
+  const { error } = await db.from("history").insert(row);
+  if(error) throw error;
+}
+
+// Actualizar fecha en history
+async function updateHistDateDB(id, date){
+  const { error } = await db.from("history").update({ date, updated_at: Date.now() }).eq("id", id);
+  if(error) throw error;
+}
+
+// Eliminar entrada de history
+async function deleteHistDB(id){
+  const { error } = await db.from("history").delete().eq("id", id);
+  if(error) throw error;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ACCIONES
+// ══════════════════════════════════════════════════════════════
+
+async function saveBill(bill){
+  try{
+    await saveBillDB(bill);
+    const i = S.bills.findIndex(b=>b.id===bill.id);
+    if(i>=0) S.bills[i]=bill; else S.bills.push(bill);
+    renderBills();
+    showToast("Saved ✓");
+  } catch(err){ showToast("Error saving: "+err.message); }
+}
+
+async function deleteBill(id){
+  if(!confirm("Delete this bill?")) return;
+  try{
+    await deleteBillDB(id);
+    S.bills = S.bills.filter(b=>b.id!==id);
+    renderBills();
+    showToast("Deleted");
+  } catch(err){ showToast("Error deleting: "+err.message); }
+}
+
+async function markPaid(id){
+  const b = S.bills.find(x=>x.id===id); if(!b) return;
+  b.paid=true; b.autopay=false;
+  const entry = { id:uid(), billId:id, name:b.name, amount:b.amount, cat:b.cat, date:new Date().toISOString().split("T")[0], icon:getEmojiOnly(b) };
+  try{
+    await saveBillDB(b);
+    await saveHistoryDB(entry);
+    S.history.unshift({...entry, bill_id: entry.billId});
+    renderBills(); renderHistory();
+    showToast("Marked as paid ✓");
+  } catch(err){ showToast("Error: "+err.message); }
+}
+
+async function unmarkPaid(id){
+  const b = S.bills.find(x=>x.id===id); if(!b) return;
+  b.paid=false;
+  try{
+    await saveBillDB(b);
+    renderBills();
+    showToast("Unmarked");
+  } catch(err){ showToast("Error: "+err.message); }
+}
+
+async function toggleAutopay(id){
+  const b = S.bills.find(x=>x.id===id); if(!b) return;
+  b.autopay=!b.autopay;
+  if(b.autopay){ b.paid=false; b.cancelled=false; }
+  try{
+    await saveBillDB(b);
+    renderBills();
+    showToast(b.autopay?"Autopay on":"Autopay off");
+  } catch(err){ showToast("Error: "+err.message); }
+}
+
+async function updateHistDate(id, date){
+  try{
+    await updateHistDateDB(id, date);
+    const h = S.history.find(x=>x.id===id);
+    if(h) h.date = date;
+    renderHistory();
+    showToast("Date updated ✓");
+  } catch(err){ showToast("Error: "+err.message); }
+}
+
+async function deleteHist(id){
+  try{
+    await deleteHistDB(id);
+    S.history = S.history.filter(x=>x.id!==id);
+    renderHistory();
+    showToast("Deleted");
+  } catch(err){ showToast("Error: "+err.message); }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════════
+
+let dismissed = false;
+function renderAlerts(){
+  const el=document.getElementById("alerts"); if(!el||dismissed){if(el)el.innerHTML="";return;}
+  const over=S.bills.filter(b=>!b.paid&&!b.autopay&&!b.cancelled&&daysLeft(b.due)<0);
+  const soon=S.bills.filter(b=>!b.paid&&!b.autopay&&!b.cancelled&&daysLeft(b.due)>=0&&daysLeft(b.due)<=3);
+  let h="";
+  if(over.length) h+=`<div class="alert-box alert-danger"><div class="alert-title"><i class="ti ti-alert-circle"></i>${over.length} overdue<button class="alert-close" onclick="dismissed=true;renderAlerts()">✕</button></div>${over.map(b=>`<div class="alert-row"><span>${b.name}</span><span>$${b.amount.toFixed(2)} · ${Math.abs(daysLeft(b.due))}d ago</span></div>`).join("")}</div>`;
+  if(soon.length) h+=`<div class="alert-box alert-warning"><div class="alert-title"><i class="ti ti-clock"></i>Due within 3 days${!over.length?`<button class="alert-close" onclick="dismissed=true;renderAlerts()">✕</button>`:""}</div>${soon.map(b=>{const d=daysLeft(b.due);return`<div class="alert-row"><span>${b.name}</span><span>$${b.amount.toFixed(2)} · ${d===0?"today":d===1?"tomorrow":"in "+d+"d"}</span></div>`;}).join("")}</div>`;
+  el.innerHTML=h;
+}
+
+function renderTotals(){
+  const active=S.bills.filter(b=>!b.cancelled);
+  const monthly=active.reduce((s,b)=>s+toMonthly(b),0);
+  const paid=active.filter(b=>b.paid).reduce((s,b)=>s+toMonthly(b),0);
+  const pend=monthly-paid;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set("tot-monthly","$"+monthly.toFixed(2)); set("tot-annual","$"+(monthly*12).toFixed(0)+"/yr");
+  set("tot-paid","$"+paid.toFixed(2)); set("tot-paid-pct",monthly>0?((paid/monthly)*100).toFixed(0)+"% of total":"");
+  set("tot-pending","$"+pend.toFixed(2)); set("tot-pending-pct",monthly>0?((pend/monthly)*100).toFixed(0)+"% of total":"");
+}
+
+function renderBills(){
+  renderAlerts(); renderTotals();
+  const BADGE={overdue:`<span class="badge b-overdue">Overdue</span>`,soon:`<span class="badge b-soon">Due soon</span>`,ok:`<span class="badge b-ok">On track</span>`,paid:`<span class="badge b-paid">Paid</span>`,autopay:`<span class="badge b-autopay"><i class="ti ti-bolt"></i> Autopay</span>`,cancelled:`<span class="badge b-cancelled"><i class="ti ti-ban"></i> Cancelled</span>`};
+  const ORDER={overdue:0,soon:1,ok:2,autopay:3,paid:4,cancelled:5};
+  let list=S.bills.filter(b=>S.filter==="all"?true:getStatus(b)===S.filter);
+  list.sort((a,b)=>ORDER[getStatus(a)]-ORDER[getStatus(b)]||new Date(a.due)-new Date(b.due));
+  const el=document.getElementById("bills-list"); if(!el)return;
+  if(!list.length){el.innerHTML=`<div class="empty-state"><i class="ti ti-circle-check"></i><p>Nothing here</p></div>`;return;}
+  el.innerHTML=list.map(bill=>{
+    const st=getStatus(bill), d=daysLeft(bill.due);
+    let dueStr="", dueCls="";
+    if(bill.cancelled) dueStr="Cancelled";
+    else if(bill.paid) dueStr="Paid";
+    else if(bill.autopay){dueStr="Auto-charged";dueCls="c-info";}
+    else if(d<0){dueStr=Math.abs(d)+"d overdue";dueCls="c-danger";}
+    else if(d===0){dueStr="Due today";dueCls="c-warning";}
+    else if(d===1){dueStr="Due tomorrow";dueCls="c-warning";}
+    else{dueStr="Due in "+d+"d";dueCls=d<=7?"c-warning":"c-success";}
+    const planTag=bill.plan?`<span class="plan-tag">${bill.plan}</span>`:"";
+    return`<div class="bill-card s-${st}">
+      <div class="bill-logo">${getIconHTML(bill)}</div>
+      <div class="bill-info">
+        <div class="bill-name-row"><span class="bill-name">${bill.name}</span>${planTag}</div>
+        <div class="bill-meta">${CAT_LABELS[bill.cat]||bill.cat} · ${REC_LABELS[bill.rec]||bill.rec} · ${fmtDate(bill.due)}</div>
+      </div>
+      <div class="bill-right">
+        <div class="bill-amt">$${bill.amount.toFixed(2)}</div>
+        <div class="bill-due ${dueCls}">${dueStr}</div>
+        ${BADGE[st]}
+      </div>
+      <div class="bill-actions">
+        <button class="icon-btn ${bill.autopay?"ab":""}" onclick="toggleAutopay('${bill.id}')" title="${bill.autopay?"Remove autopay":"Set autopay"}"><i class="ti ti-bolt"></i></button>
+        ${!bill.paid&&!bill.cancelled?`<button class="icon-btn ag" onclick="markPaid('${bill.id}')" title="Mark paid"><i class="ti ti-circle-check"></i></button>`:`<button class="icon-btn" onclick="unmarkPaid('${bill.id}')" title="Unmark"><i class="ti ti-circle-dashed"></i></button>`}
+        <button class="icon-btn" onclick="openModal('${bill.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn ar" onclick="deleteBill('${bill.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderHistory(){
+  const f=document.getElementById("hist-filter")?.value||"all";
+  const now=new Date(), m=now.getMonth(), y=now.getFullYear();
+  const rows=S.history.filter(h=>{
+    if(f==="all") return true;
+    const d=new Date(h.date);
+    if(f==="thismonth") return d.getMonth()===m&&d.getFullYear()===y;
+    if(f==="lastmonth"){const lm=m===0?11:m-1,ly=m===0?y-1:y;return d.getMonth()===lm&&d.getFullYear()===ly;}
+    return true;
+  });
+  const el=document.getElementById("history-list"); if(!el)return;
+  if(!rows.length){el.innerHTML=`<div class="empty-state"><i class="ti ti-calendar"></i><p>No payments recorded yet</p></div>`;return;}
+  const total=rows.reduce((s,h)=>s+parseFloat(h.amount||0),0);
+  el.innerHTML=`<div class="hist-summary"><span>${rows.length} payment${rows.length!==1?"s":""}</span><span class="c-success">Total: $${total.toFixed(2)}</span></div>`
+    +rows.map(h=>{
+      const df=new Date(h.date+"T00:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+      const hBill={name:h.name, cat:h.cat||"other"};
+      return`<div class="hist-card"><div class="hist-icon">${getIconHTML(hBill)}</div><div class="hist-info"><div class="hist-name">${h.name}</div><div class="hist-date">${df}</div></div><div class="hist-amt c-success">$${parseFloat(h.amount||0).toFixed(2)}</div><div class="hist-actions"><button class="icon-btn" onclick="openHistModal('${h.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn ar" onclick="deleteHist('${h.id}')"><i class="ti ti-trash"></i></button></div></div>`;
+    }).join("");
+}
+
+function renderInsights(){
+  const active=S.bills.filter(b=>!b.cancelled);
+  const monthly=active.reduce((s,b)=>s+toMonthly(b),0);
+  const str=active.filter(b=>b.cat==="streaming").reduce((s,b)=>s+toMonthly(b),0);
+  const auto=active.filter(b=>b.autopay).reduce((s,b)=>s+toMonthly(b),0);
+  document.getElementById("ins-stats").innerHTML=`
+    <div class="stat-card"><div class="stat-label">Monthly total</div><div class="stat-value">$${monthly.toFixed(2)}</div><div class="stat-sub">$${(monthly*12).toFixed(0)}/year</div></div>
+    <div class="stat-card"><div class="stat-label">On autopay</div><div class="stat-value c-info">$${auto.toFixed(2)}</div><div class="stat-sub">${monthly>0?((auto/monthly)*100).toFixed(0):0}% automated</div></div>
+    <div class="stat-card"><div class="stat-label">Streaming</div><div class="stat-value c-purple">$${str.toFixed(2)}</div><div class="stat-sub">${monthly>0?((str/monthly)*100).toFixed(0):0}% of total</div></div>
+    <div class="stat-card"><div class="stat-label">Bills tracked</div><div class="stat-value">${active.length}</div><div class="stat-sub">${S.bills.filter(b=>b.cancelled).length} cancelled</div></div>`;
+  const cats={};
+  active.forEach(b=>{cats[b.cat]=(cats[b.cat]||0)+toMonthly(b);});
+  const sorted=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const labels=sorted.map(([k])=>CAT_LABELS[k]||k), data=sorted.map(([,v])=>parseFloat(v.toFixed(2))), colors=sorted.map(([k])=>CAT_COLORS[k]||"#888");
+  if(S.chart) S.chart.destroy();
+  const ctx=document.getElementById("catChart");
+  if(ctx) S.chart=new Chart(ctx,{type:"doughnut",data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`$${c.raw.toFixed(2)}/mo`}}}}});
+  const tot=data.reduce((a,b)=>a+b,0);
+  document.getElementById("chart-legend").innerHTML=sorted.map(([k,v],i)=>`<span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${labels[i]} $${v.toFixed(0)} (${tot>0?((v/tot)*100).toFixed(0):0}%)</span>`).join("");
+}
+
+async function loadAI(){
+  const el=document.getElementById("ai-insights"); if(!el)return;
+  el.innerHTML=`<div class="ai-loading"><i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block"></i> Analyzing…</div>`;
+  const active=S.bills.filter(b=>!b.cancelled);
+  const monthly=active.reduce((s,b)=>s+toMonthly(b),0);
+  const summary=active.map(b=>`${b.name}($${b.amount}/${b.rec})`).join(",");
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:`Finance advisor. Bills: ${summary}. Total $${monthly.toFixed(2)}/mo. Give 4 insights as JSON [{title,insight,tip}]. Only JSON, no markdown.`}]})
+    });
+    const d=await r.json();
+    const txt=d.content.map(c=>c.text||"").join("").trim().replace(/```json|```/g,"");
+    const ins=JSON.parse(txt);
+    el.innerHTML=ins.map(i=>`<div class="ai-card"><h4><i class="ti ti-sparkles"></i>${i.title}</h4><p>${i.insight}</p><p class="ai-tip"><i class="ti ti-arrow-right"></i> ${i.tip}</p></div>`).join("");
+  } catch(e){
+    el.innerHTML=`<div class="ai-card"><h4><i class="ti ti-sparkles"></i>High streaming spend</h4><p>You have multiple streaming services running simultaneously.</p><p class="ai-tip"><i class="ti ti-arrow-right"></i> Consider rotating monthly to save $30–40/mo.</p></div>`;
+  }
+}
+
+// ── TABS & FILTERS ────────────────────────────────────────────
+function goTab(tab,el){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+tab).classList.add("active");
+  el.classList.add("active");
+  if(tab==="history") renderHistory();
+  if(tab==="insights"){ renderInsights(); loadAI(); }
+}
+function setFilter(f,el){ S.filter=f; document.querySelectorAll(".pill").forEach(p=>p.classList.remove("active")); el.classList.add("active"); renderBills(); }
+
+// ── MODALS ────────────────────────────────────────────────────
+function openModal(id){
+  const bill=id?S.bills.find(b=>b.id===id):null; S.editId=bill?bill.id:null;
+  const today=new Date().toISOString().split("T")[0];
+  document.getElementById("modal-title").textContent=bill?"Edit bill":"Add bill";
+  document.getElementById("f-name").value=bill?.name||"";
+  document.getElementById("f-amount").value=bill?.amount||"";
+  document.getElementById("f-due").value=bill?.due?bill.due:today;
+  document.getElementById("f-cat").value=bill?.cat||"other";
+  document.getElementById("f-rec").value=bill?.rec||"monthly";
+  document.getElementById("f-plan").value=bill?.plan||"";
+  document.getElementById("f-autopay").checked=!!bill?.autopay;
+  document.getElementById("f-cancelled").checked=!!bill?.cancelled;
+  document.getElementById("bill-modal").classList.add("open");
+}
+function closeModal(){ document.getElementById("bill-modal").classList.remove("open"); }
+function saveBillForm(){
+  const name=document.getElementById("f-name").value.trim();
+  const amount=parseFloat(document.getElementById("f-amount").value);
+  const due=document.getElementById("f-due").value;
+  if(!name||isNaN(amount)||!due){ alert("Please fill in all required fields."); return; }
+  const existing=S.editId?S.bills.find(b=>b.id===S.editId):null;
+  saveBill({
+    id: S.editId||uid(), name, amount, due,
+    cat: document.getElementById("f-cat").value,
+    rec: document.getElementById("f-rec").value,
+    plan: document.getElementById("f-plan").value.trim(),
+    autopay: document.getElementById("f-autopay").checked,
+    cancelled: document.getElementById("f-cancelled").checked,
+    paid: existing?.paid||false
+  });
+  closeModal();
+}
+function openHistModal(id){ const h=S.history.find(x=>x.id===id); if(!h)return; S.editHistId=id; document.getElementById("hm-date").value=h.date; document.getElementById("hist-modal").classList.add("open"); }
+function closeHistModal(){ document.getElementById("hist-modal").classList.remove("open"); }
+function saveHistDate(){ const d=document.getElementById("hm-date").value; if(!d)return; updateHistDate(S.editHistId,d); closeHistModal(); }
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", ()=>{
+  document.getElementById("hdr-date").textContent=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  document.getElementById("bill-modal").addEventListener("click",e=>{if(e.target.id==="bill-modal")closeModal();});
+  document.getElementById("hist-modal").addEventListener("click",e=>{if(e.target.id==="hist-modal")closeHistModal();});
+  loadAll();
+  setupRealtime();
+});
+
+// ══════════════════════════════════════════════════════════════
+//  SUPABASE REALTIME — escucha cambios en tiempo real
+//  Se activa automáticamente al cargar la app
+// ══════════════════════════════════════════════════════════════
+function setupRealtime() {
+  // Canal que escucha cambios en AMBAS tablas
+  db.channel('bill-tracker-realtime')
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'bills' },
+      (payload) => {
+        handleBillChange(payload);
+      }
+    )
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'history' },
+      (payload) => {
+        handleHistoryChange(payload);
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Realtime connected ✓');
+        setSyncUI('ok');
+      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        console.warn('Realtime disconnected:', status);
+        setSyncUI('error');
+      }
+    });
+}
+
+function handleBillChange(payload) {
+  const { eventType, new: newRow, old: oldRow } = payload;
+  if (eventType === 'INSERT') {
+    // Solo agregar si no existe ya (evita duplicado por acción propia)
+    if (!S.bills.find(b => b.id === newRow.id)) {
+      S.bills.push(newRow);
+    }
+  } else if (eventType === 'UPDATE') {
+    const i = S.bills.findIndex(b => b.id === newRow.id);
+    if (i >= 0) S.bills[i] = newRow;
+    else S.bills.push(newRow);
+  } else if (eventType === 'DELETE') {
+    S.bills = S.bills.filter(b => b.id !== oldRow.id);
+  }
+  renderBills();
+  showToast('Synced ↻');
+}
+
+function handleHistoryChange(payload) {
+  const { eventType, new: newRow, old: oldRow } = payload;
+  if (eventType === 'INSERT') {
+    if (!S.history.find(h => h.id === newRow.id)) {
+      S.history.unshift(newRow);
+    }
+  } else if (eventType === 'UPDATE') {
+    const i = S.history.findIndex(h => h.id === newRow.id);
+    if (i >= 0) S.history[i] = newRow;
+    else S.history.unshift(newRow);
+  } else if (eventType === 'DELETE') {
+    S.history = S.history.filter(h => h.id !== oldRow.id);
+  }
+  renderHistory();
+}
+
+</script>
+</body>
+</html>
